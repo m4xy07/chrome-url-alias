@@ -1,9 +1,9 @@
 {
    "background": {
-      "persistent": false,
+      "persistent": true,
       "scripts": [ "background.js" ]
    },
-   "author": "Karan Goel",
+   "author": "Karan Goel [Base] , m4xy07 [Updates]",
    "content_security_policy": "script-src 'self' https://code.jquery.com https://storage.googleapis.com https://fonts.googleapis.com; object-src 'self'",
    "description": "Set URL aliases ('m/' goes to 'mail.google.com')",
    "homepage_url": "https://github.com/karan/chrome-url-alias",
@@ -15,7 +15,7 @@
    "manifest_version": 2,
    "name": "URL Alias",
    "options_page": "options.html",
-   "permissions": [ "tabs", "storage" ],
+   "permissions": [ "tabs", "storage", "webRequest", "webRequestBlocking", "<all_urls>" ],
    "update_url": "http://clients2.google.com/service/update2/crx",
-   "version": "0.0.1"
+   "version": "1.0.2"
 }

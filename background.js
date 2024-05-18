@@ -1,9 +1,9 @@
-// Load stored preferenced
-store = new Object();
+// Load stored preferences
+var store = {};
 
 function updateStore() {
   chrome.storage.sync.get('urlalias', function (obj) {
-    store = new Object();
+    store = {};
 
     // First time, initialize.
     if (obj != null) {
@@ -12,18 +12,21 @@ function updateStore() {
 
     // Add default keys if empty.
     if (store == null || Object.keys(store).length == 0) {
-      store = new Object();
+      store = {};
       store["m"] = "https://mail.google.com";
       store["c"] = "https://calendar.google.com";
       store["d"] = "https://drive.google.com";
       chrome.storage.sync.set({ 'urlalias': store});
     }
   });
-};
+}
+
 updateStore();
 
 // Checks if 'server' is to be redirected, and executes the redirect.
-function doRedirectIfSaved(tabId, server, others) {
+function doRedirectIfSaved(details) {
+  var url = new URL(details.url);
+  var server = url.hostname;
   var redirect = store[server];
 
   if (redirect == null) {
@@ -31,33 +34,27 @@ function doRedirectIfSaved(tabId, server, others) {
     for (var key in store) {
       if (key.startsWith(server)) {
         // Found the server
-        redirect = store[key].replace("###", others.join('/'));
+        redirect = store[key].replace("###", url.pathname.slice(1));
         break;
       }
     }
   }
 
-  if (redirect.indexOf('://') < 0) {
-    // Add a default protocol
-    redirect = "http://" + redirect;
-  }
-  chrome.tabs.update(tabId, { url: redirect });
-}
-
-// Called when the user changes the url of a tab.
-function onTabUpdate(tabId, changeInfo, tab) {
-  var url = tab.url;
-
-  var url_protocol_stripped = /^http[s]?:\/\/(.*)/g.exec(url);
-
-  if (url_protocol_stripped != null && url_protocol_stripped.length >= 2) {
-    var match = url_protocol_stripped[[1]].split("/");
-    doRedirectIfSaved(tabId, match[0], match.splice(1));
+  if (redirect) {
+    if (redirect.indexOf('://') < 0) {
+      // Add a default protocol
+      redirect = "http://" + redirect;
+    }
+    return { redirectUrl: redirect };
   }
 }
 
-// Listen for any changes to the URL of any tab.
-chrome.tabs.onUpdated.addListener(onTabUpdate);
+// Intercept requests before they're sent
+chrome.webRequest.onBeforeRequest.addListener(
+  doRedirectIfSaved,
+  { urls: ["<all_urls>"] },
+  ["blocking"]
+);
 
 // Track changes to data object.
 chrome.storage.onChanged.addListener(function(changes, namespace) {
